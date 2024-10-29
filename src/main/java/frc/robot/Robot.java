@@ -1,8 +1,4 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
-package edu.wpi.first.wpilibj.examples.gettingstarted;
+package frc.robot;
 
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -39,7 +35,7 @@ public class Robot extends TimedRobot {
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
-    m_rightDrive.setInverted(true);
+    m_rightDrive.setInverted(false);
   }
 
   /** This function is run once each time the robot enters autonomous mode. */
@@ -67,7 +63,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
-    m_robotDrive.arcadeDrive(m_controller.getLeftY(), m_controller.getRawAxis(5));
+    m_robotDrive.arcadeDrive(-m_controller.getLeftY(), m_controller.getRawAxis(5));
   }
 
   /** This function is called once each time the robot enters test mode. */
