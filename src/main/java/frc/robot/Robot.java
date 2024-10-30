@@ -62,7 +62,7 @@ public class Robot extends TimedRobot {
 
         // Get the joystick inputs
         double xSpeed = -m_controller.getLeftY() * speedMultiplier; // Forward/Backward
-        double ySpeed = m_controller.getRawAxis(5) * speedMultiplier;  // Left/Right
+        double ySpeed = m_controller.getRawAxis(0) * speedMultiplier;  // Left/Right
 
         // Calculate the current acceleration based on speed changes
         double currentSpeed = Math.sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
@@ -72,7 +72,9 @@ public class Robot extends TimedRobot {
         double speedAdjustment = (accelerationSetpoint - acceleration) * accelerationKP;
         xSpeed += speedAdjustment;
         ySpeed += speedAdjustment;
-
+        if (m_controller.getRawButton(2)) {
+          gyro.reset();
+        }
         // Check if field-relative mode is enabled
         boolean isFieldRelative = SmartDashboard.getBoolean("Field-Relative Drive", true);
         if (isFieldRelative) {
