@@ -38,11 +38,11 @@ public class Robot extends TimedRobot {
         gyro.calibrate(); // Calibrate gyro on startup
 
         // Add a toggle to the dashboard for selecting field-relative or robot-relative control
-        SmartDashboard.putBoolean("Field-Relative Drive", true); // Default to field-relative
+        SmartDashboard.putBoolean("Field-Relative Drive", false); // Default to non field-relative,  i don't want to like kill kieran
 
         // Add speed multiplier and acceleration setpoint to the SmartDashboard for adjustments
         SmartDashboard.putNumber("Speed Multiplier", 1.0);
-        SmartDashboard.putNumber("Acceleration Setpoint", 0.2);  // Target acceleration in units/s^2
+        SmartDashboard.putNumber("Acceleration Setpoint", 0.2);  // Target acceleration in units/s^2 (1 is full 0 is stopped -1 is full reverse)
     }
 
     @Override
