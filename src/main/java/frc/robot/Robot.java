@@ -1,5 +1,9 @@
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Timer;
@@ -7,6 +11,8 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Units;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj.TimedRobot;
 
 public class Robot extends TimedRobot {
@@ -18,7 +24,6 @@ public class Robot extends TimedRobot {
     private final ADXRS450_Gyro gyro = new ADXRS450_Gyro();
     private final BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
 
-    // Speed multiplier and acceleration PID constants 
     private double speedMultiplier;
     private double accelerationSetpoint;
     private double accelerationKP = 0.1;
@@ -26,18 +31,26 @@ public class Robot extends TimedRobot {
     private double speed = 0.0;
     private double lastUpdateTime;
 
-    // Variables for velocity and position tracking using accelerometer
-    private double velocityX = 0.0;
-    private double velocityY = 0.0;
-    private double positionX = 0.0;
-    private double positionY = 0.0;
-    private final double dt = 0.02;  // Assuming a 20ms loop interval
+    // NetworkTables entries
+    private NetworkTableEntry ntSpeed;
+    private NetworkTableEntry ntAcceleration;
+    private NetworkTableEntry ntGyroAngle;
 
     @Override
     public void robotInit() {
-        m_rightDrive.setInverted(false);
+        // Camera setup for USB webcam
+        CameraServer.startAutomaticCapture();
+
+        // Initialize gyro and NetworkTables
         gyro.calibrate();
-        
+        NetworkTableInstance inst = NetworkTableInstance.getDefault();
+        NetworkTable telemetryTable = inst.getTable("Telemetry");
+
+        // NetworkTables entries for telemetry data
+        ntSpeed = telemetryTable.getEntry("RobotSpeed");
+        ntAcceleration = telemetryTable.getEntry("RobotAcceleration");
+        ntGyroAngle = telemetryTable.getEntry("GyroAngle");
+
         SmartDashboard.putBoolean("Field-Relative Drive", false);
         SmartDashboard.putNumber("Speed Multiplier", 1.0);
         SmartDashboard.putNumber("Acceleration Setpoint", 0.2);
@@ -54,7 +67,7 @@ public class Robot extends TimedRobot {
         double ySpeed = m_controller.getRawAxis(5) * speedMultiplier;
 
         double currentSpeed = Math.sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
-        double acceleration = (currentSpeed - previousSpeed) / dt;
+        double acceleration = (currentSpeed - previousSpeed) / 0.02;
 
         double speedAdjustment = (accelerationSetpoint - acceleration) * accelerationKP;
         xSpeed += speedAdjustment;
@@ -71,34 +84,28 @@ public class Robot extends TimedRobot {
         m_robotDrive.arcadeDrive(xSpeed, ySpeed);
 
         previousSpeed = currentSpeed;
-
-        // Update velocity and position from accelerometer
-        updateVelocityAndPosition();
-        
-        // Update the speedometer display
-        updateSpeedometer();
+        updateTelemetry();
     }
 
-    private void updateVelocityAndPosition() {
-        // Get acceleration values in m/s^2
-        double accelX = accelerometer.getX() * 9.81; // Assuming accelerometer returns in G's, convert to m/s^2
-        double accelY = accelerometer.getY() * 9.81;
+    private void updateTelemetry() {
+        double currentTime = Timer.getFPGATimestamp();
+        double deltaTime = currentTime - lastUpdateTime;
+        lastUpdateTime = currentTime;
 
-        // Integrate acceleration to get velocity
-        velocityX += accelX * dt;
-        velocityY += accelY * dt;
+        double accelerationX = accelerometer.getX();
+        double accelerationY = accelerometer.getY();
 
-        // Integrate velocity to get position
-        positionX += velocityX * dt;
-        positionY += velocityY * dt;
-    }
+        double accelerationMagnitude = Math.sqrt(accelerationX * accelerationX + accelerationY * accelerationY);
+        speed += accelerationMagnitude * deltaTime;
 
-    private void updateSpeedometer() {
-        // Calculate the speed as the magnitude of velocity vector
-        speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+        // Publish data to NetworkTables
+        ntSpeed.setDouble(speed);
+        ntAcceleration.setDouble(accelerationMagnitude);
+        ntGyroAngle.setDouble(gyro.getAngle());
 
+        // Display on SmartDashboard
         SmartDashboard.putNumber("Robot Speed (m/s)", speed);
-        SmartDashboard.putNumber("Robot Position X (m)", positionX);
-        SmartDashboard.putNumber("Robot Position Y (m)", positionY);
+        SmartDashboard.putNumber("Robot Acceleration (m/s^2)", accelerationMagnitude);
+        SmartDashboard.putNumber("Gyro Angle", gyro.getAngle());
     }
 }
