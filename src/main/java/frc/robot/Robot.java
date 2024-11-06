@@ -11,8 +11,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Units;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj.TimedRobot;
 
 public class Robot extends TimedRobot {
@@ -20,7 +18,6 @@ public class Robot extends TimedRobot {
     private final PWMSparkMax m_rightDrive = new PWMSparkMax(1);
     private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftDrive, m_rightDrive);
     private final XboxController m_controller = new XboxController(0);
-    private final Timer m_timer = new Timer();
     private final ADXRS450_Gyro gyro = new ADXRS450_Gyro();
     private final BuiltInAccelerometer accelerometer = new BuiltInAccelerometer();
 
