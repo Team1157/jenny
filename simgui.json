@@ -21,6 +21,9 @@
   "NetworkTables": {
     "transitory": {
       "SmartDashboard": {
+        "Robot Speed (m": {
+          "open": true
+        },
         "open": true
       }
     }

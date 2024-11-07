@@ -10,6 +10,9 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.simulation.ADXRS450_GyroSim;
+import edu.wpi.first.wpilibj.simulation.BuiltInAccelerometerSim;
+import edu.wpi.first.wpilibj.simulation.PWMSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.TimedRobot;
 
@@ -33,6 +36,12 @@ public class Robot extends TimedRobot {
     private NetworkTableEntry ntAcceleration;
     private NetworkTableEntry ntGyroAngle;
 
+    // Simulation components
+    private ADXRS450_GyroSim gyroSim;
+    private BuiltInAccelerometerSim accelerometerSim;
+    private PWMSim leftMotorSim;
+    private PWMSim rightMotorSim;
+
     @Override
     public void robotInit() {
         // Camera setup for USB webcam
@@ -54,6 +63,14 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("Acceleration Setpoint", 0.2);
 
         lastUpdateTime = Timer.getFPGATimestamp();
+
+        // Simulation setup
+        if (isSimulation()) {
+            gyroSim = new ADXRS450_GyroSim(gyro);
+            accelerometerSim = new BuiltInAccelerometerSim();
+            leftMotorSim = new PWMSim(m_leftDrive.getChannel());
+            rightMotorSim = new PWMSim(m_rightDrive.getChannel());
+        }
     }
 
     @Override
@@ -85,13 +102,32 @@ public class Robot extends TimedRobot {
         updateTelemetry();
     }
 
+    @Override
+    public void simulationPeriodic() {
+        // Simulate basic drivetrain physics for gyro and accelerometer
+        double leftSpeed = leftMotorSim.getSpeed();
+        double rightSpeed = rightMotorSim.getSpeed();
+
+        // Approximate linear velocity by averaging motor outputs (this is very basic)
+        double avgSpeed = (leftSpeed + rightSpeed) / 2.0 * 3.0; // scaling factor for simulation
+        speed = avgSpeed;
+
+        // Simulate gyro angle change based on turn rate
+        double turnRate = (rightSpeed - leftSpeed) * 45; // degrees per second approximation
+        gyroSim.setAngle(gyro.getAngle() + turnRate * 0.02);
+
+        // Simulate accelerometer readings (rough estimate based on motor output)
+        accelerometerSim.setX(avgSpeed * 0.1);
+        accelerometerSim.setY(0);
+    }
+
     private void updateTelemetry() {
         double currentTime = Timer.getFPGATimestamp();
         double deltaTime = currentTime - lastUpdateTime;
         lastUpdateTime = currentTime;
 
-        double accelerationX = accelerometer.getX();
-        double accelerationY = accelerometer.getY();
+        double accelerationX = accelerometer.getY();
+        double accelerationY = accelerometer.getX();
 
         double accelerationMagnitude = Math.sqrt(accelerationX * accelerationX + accelerationY * accelerationY);
         speed += accelerationMagnitude * deltaTime;
