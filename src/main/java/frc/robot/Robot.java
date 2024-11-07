@@ -36,7 +36,8 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         // Camera setup for USB webcam
-        CameraServer.startAutomaticCapture();
+        CameraServer.startAutomaticCapture(0);
+        CameraServer.startAutomaticCapture(1);
 
         // Initialize gyro and NetworkTables
         gyro.calibrate();
@@ -49,7 +50,7 @@ public class Robot extends TimedRobot {
         ntGyroAngle = telemetryTable.getEntry("GyroAngle");
 
         SmartDashboard.putBoolean("Field-Relative Drive", false);
-        SmartDashboard.putNumber("Speed Multiplier", 1.0);
+        SmartDashboard.putNumber("Speed Multiplier", 2.0);
         SmartDashboard.putNumber("Acceleration Setpoint", 0.2);
 
         lastUpdateTime = Timer.getFPGATimestamp();
@@ -57,11 +58,11 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopPeriodic() {
-        speedMultiplier = SmartDashboard.getNumber("Speed Multiplier", 1.0);
+        speedMultiplier = SmartDashboard.getNumber("Speed Multiplier", 2.0);
         accelerationSetpoint = SmartDashboard.getNumber("Acceleration Setpoint", 0.2);
 
         double xSpeed = -m_controller.getLeftY() * speedMultiplier;
-        double ySpeed = m_controller.getRawAxis(5) * speedMultiplier;
+        double ySpeed = m_controller.getRawAxis(5) * 2 * speedMultiplier;
 
         double currentSpeed = Math.sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
         double acceleration = (currentSpeed - previousSpeed) / 0.02;
