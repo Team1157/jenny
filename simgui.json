@@ -37,14 +37,13 @@
     "transitory": {
       "SmartDashboard": {
         "Drive Mode": {
-          "open": true,
           "string[]##v_/SmartDashboard/Drive Mode/options": {
             "open": true
           }
         },
-        "Robot Speed (m": {
-          "open": true
-        },
+        "open": true
+      },
+      "Telemetry": {
         "open": true
       }
     }

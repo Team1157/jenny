@@ -64,6 +64,11 @@ public class Robot extends TimedRobot {
     private NetworkTableEntry ntAcceleration;
     private NetworkTableEntry ntGyroAngle;
 
+    private NetworkTableEntry ntLeftStickAxis;
+    private NetworkTableEntry ntRightStickAxis;
+    private NetworkTableEntry ntSpeedMultiplier;
+    private NetworkTableEntry ntAccelerationSetpoint;
+
     private double speed = 0.0;
     private double previousSpeed = 0.0;
     private final Trajectory m_trajectory = TrajectoryGenerator.generateTrajectory(
@@ -84,16 +89,21 @@ public class Robot extends TimedRobot {
         ntAcceleration = telemetryTable.getEntry("RobotAcceleration");
         ntGyroAngle = telemetryTable.getEntry("GyroAngle");
 
+        // Initialize SmartDashboard settings
         SmartDashboard.putData("Field", m_fieldSim);
-
-        // Initialize the drive mode chooser
         m_driveModeChooser.setDefaultOption("Arcade Drive", "arcade");
         m_driveModeChooser.addOption("Differential Drive", "differential");
         SmartDashboard.putData("Drive Mode", m_driveModeChooser);
 
-        // Show joystick axes on the SmartDashboard
-        SmartDashboard.putNumber("Left Joystick Y Axis", 0.0);
-        SmartDashboard.putNumber("Right Joystick X Axis", 0.0);
+        ntLeftStickAxis = telemetryTable.getEntry("LeftStickAxis");
+        ntRightStickAxis = telemetryTable.getEntry("RightStickAxis");
+        ntSpeedMultiplier = telemetryTable.getEntry("SpeedMultiplier");
+        ntAccelerationSetpoint = telemetryTable.getEntry("AccelerationSetpoint");
+
+        ntLeftStickAxis.setDouble(1); // Default axis for left stick
+        ntRightStickAxis.setDouble(5); // Default axis for right stick
+        ntSpeedMultiplier.setDouble(3.0); // Default speed multiplier
+        ntAccelerationSetpoint.setDouble(3.0); // Default acceleration setpoint
     }
 
     @Override
@@ -110,31 +120,34 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopPeriodic() {
-        // Get joystick values
-        double leftY = m_controller.getLeftY();
-        double rightX = -m_controller.getRawAxis(5);
+        // Get selected joystick axes from NetworkTables
+        int leftAxis = (int) ntLeftStickAxis.getDouble(1);
+        int rightAxis = (int) ntRightStickAxis.getDouble(5);
 
-        // Update the SmartDashboard with the joystick values
-        SmartDashboard.putNumber("Left Joystick Y Axis", leftY);
-        SmartDashboard.putNumber("Right Joystick X Axis", rightX);
+        // Get joystick values from selected axes
+        double leftY = m_controller.getRawAxis(leftAxis);
+        double rightY = m_controller.getRawAxis(rightAxis);
 
-        // Get the selected drive mode from the chooser
+        // Get speed multiplier and acceleration setpoint from NetworkTables
+        double speedMultiplier = ntSpeedMultiplier.getDouble(3.0);
+        double accelerationSetpoint = ntAccelerationSetpoint.getDouble(3.0);
+
+        // Apply rate limiters
+        double leftSpeed = m_speedLimiter.calculate(leftY * speedMultiplier);
+        double rightSpeed = m_speedLimiter.calculate(rightY * speedMultiplier);
+
+        // Set drive mode based on chooser
         String driveMode = m_driveModeChooser.getSelected();
-
-        double xSpeed = -m_speedLimiter.calculate(leftY) * 3.0;
-        double rot = -m_rotLimiter.calculate(rightX) * Math.PI;
-
-        // Drive the robot based on the selected mode
         if ("arcade".equals(driveMode)) {
+            double xSpeed = (leftSpeed + rightSpeed) / 2;
+            double rot = (rightSpeed - leftSpeed) / 2;
             m_robotDrive.arcadeDrive(xSpeed, rot);
         } else if ("differential".equals(driveMode)) {
-            double leftSpeed = xSpeed + rot;
-            double rightSpeed = xSpeed - rot;
-            m_robotDrive.tankDrive(leftSpeed / 3.0, rightSpeed / 3.0);
+            m_robotDrive.tankDrive(leftSpeed, rightSpeed);
         }
 
-        // Calculate and send speed and acceleration telemetry data
-        double currentSpeed = Math.hypot(xSpeed, rot);
+        // Telemetry for speed and acceleration
+        double currentSpeed = (leftSpeed + rightSpeed) / 2;
         double acceleration = (currentSpeed - previousSpeed) / 0.02;
         previousSpeed = currentSpeed;
 
@@ -161,9 +174,9 @@ public class Robot extends TimedRobot {
     @Override
     public void simulationPeriodic() {
         m_drivetrainSim.setInputs(
-                m_leftDrive.get() * RobotController.getBatteryVoltage(),
-                m_rightDrive.get() * RobotController.getBatteryVoltage());
-        m_drivetrainSim.update(0.02);
+                -m_leftDrive.get() * RobotController.getBatteryVoltage(),
+                -m_rightDrive.get() * RobotController.getBatteryVoltage());
+        m_drivetrainSim.update(0.020);
 
         m_leftEncoderSim.setDistance(m_drivetrainSim.getLeftPositionMeters());
         m_leftEncoderSim.setRate(m_drivetrainSim.getLeftVelocityMetersPerSecond());
