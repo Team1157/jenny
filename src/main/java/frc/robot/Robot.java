@@ -112,7 +112,7 @@ public class Robot extends TimedRobot {
     public void teleopPeriodic() {
         // Get joystick values
         double leftY = m_controller.getLeftY();
-        double rightX = m_controller.getRawAxis(5);
+        double rightX = -m_controller.getRawAxis(5);
 
         // Update the SmartDashboard with the joystick values
         SmartDashboard.putNumber("Left Joystick Y Axis", leftY);
