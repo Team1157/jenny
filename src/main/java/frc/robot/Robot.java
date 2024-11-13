@@ -84,8 +84,6 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         CameraServer.startAutomaticCapture(0);
         CameraServer.startAutomaticCapture(1);
-        CameraServer.startAutomaticCapture(2);
-
 
         NetworkTable telemetryTable = NetworkTableInstance.getDefault().getTable("Telemetry");
         ntSpeed = telemetryTable.getEntry("RobotSpeed");
@@ -136,7 +134,7 @@ public class Robot extends TimedRobot {
         double accelerationSetpoint = ntAccelerationSetpoint.getDouble(3.0);
 
         // Apply rate limiters
-        double leftSpeed = m_speedLimiter.calculate(leftY * speedMultiplier);
+        double leftSpeed = m_speedLimiter.calculate(-leftY * speedMultiplier);
         double rightSpeed = m_speedLimiter1.calculate(rightY * speedMultiplier);
 
         // Set drive mode based on chooser
