@@ -44,6 +44,7 @@ public class Robot extends TimedRobot {
     private final ADXRS450_Gyro gyro = new ADXRS450_Gyro();
 
     private final SlewRateLimiter m_speedLimiter = new SlewRateLimiter(3);
+    private final SlewRateLimiter m_speedLimiter1 = new SlewRateLimiter(3);
 
     private final DifferentialDriveKinematics m_kinematics = new DifferentialDriveKinematics(0.762);
     private final DifferentialDriveOdometry m_odometry = new DifferentialDriveOdometry(gyro.getRotation2d(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
@@ -82,6 +83,9 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         CameraServer.startAutomaticCapture(0);
+        CameraServer.startAutomaticCapture(1);
+        CameraServer.startAutomaticCapture(2);
+
 
         NetworkTable telemetryTable = NetworkTableInstance.getDefault().getTable("Telemetry");
         ntSpeed = telemetryTable.getEntry("RobotSpeed");
@@ -101,7 +105,7 @@ public class Robot extends TimedRobot {
 
         ntLeftStickAxis.setDouble(1); // Default axis for left stick
         ntRightStickAxis.setDouble(5); // Default axis for right stick
-        ntSpeedMultiplier.setDouble(3.0); // Default speed multiplier
+        ntSpeedMultiplier.setDouble(1); // Default speed multiplier
         ntAccelerationSetpoint.setDouble(3.0); // Default acceleration setpoint
     }
 
@@ -133,16 +137,17 @@ public class Robot extends TimedRobot {
 
         // Apply rate limiters
         double leftSpeed = m_speedLimiter.calculate(leftY * speedMultiplier);
-        double rightSpeed = m_speedLimiter.calculate(rightY * speedMultiplier);
+        double rightSpeed = m_speedLimiter1.calculate(rightY * speedMultiplier);
 
         // Set drive mode based on chooser
         String driveMode = m_driveModeChooser.getSelected();
-        if ("arcade".equals(driveMode)) {
+        if ("differential".equals(driveMode)) {
             double xSpeed = (leftSpeed + rightSpeed) / 2;
             double rot = (rightSpeed - leftSpeed) / 2;
-            m_robotDrive.arcadeDrive(xSpeed, rot);
-        } else if ("differential".equals(driveMode)) {
             m_robotDrive.tankDrive(leftSpeed, rightSpeed);
+        } else if ("arcade".equals(driveMode)) {
+            m_robotDrive.arcadeDrive(leftSpeed, rightSpeed);
+            System.out.println(rightSpeed);
         }
 
         // Telemetry for speed and acceleration
