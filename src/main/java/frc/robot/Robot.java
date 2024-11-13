@@ -139,15 +139,17 @@ public class Robot extends TimedRobot {
 
         // Set drive mode based on chooser
         String driveMode = m_driveModeChooser.getSelected();
-        if ("differential".equals(driveMode)) {
-            double xSpeed = (leftSpeed + rightSpeed) / 2;
-            double rot = (rightSpeed - leftSpeed) / 2;
-            m_robotDrive.tankDrive(leftSpeed, rightSpeed);
-        } else if ("arcade".equals(driveMode)) {
-            m_robotDrive.arcadeDrive(leftSpeed, rightSpeed);
-            System.out.println(rightSpeed);
+        if (m_controller.getRawButton(1)) {
+            // Set all motors to zero speed to engage braking
+            m_robotDrive.stopMotor();
+        } else {
+            if ("differential".equals(driveMode)) {
+                m_robotDrive.tankDrive(leftSpeed, rightSpeed);
+            } else if ("arcade".equals(driveMode)) {
+                m_robotDrive.arcadeDrive(leftSpeed, rightSpeed);
+                System.out.println(rightSpeed);
+            }
         }
-
         // Telemetry for speed and acceleration
         double currentSpeed = (leftSpeed + rightSpeed) / 2;
         double acceleration = (currentSpeed - previousSpeed) / 0.02;
