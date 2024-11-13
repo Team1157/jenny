@@ -43,8 +43,8 @@ public class Robot extends TimedRobot {
     private final Encoder m_rightEncoder = new Encoder(2, 3);
     private final ADXRS450_Gyro gyro = new ADXRS450_Gyro();
 
-    private final SlewRateLimiter m_speedLimiter = new SlewRateLimiter(3);
-    private final SlewRateLimiter m_speedLimiter1 = new SlewRateLimiter(3);
+    private final SlewRateLimiter m_speedLimiter = new SlewRateLimiter(1);
+    private final SlewRateLimiter m_speedLimiter1 = new SlewRateLimiter(1);
 
     private final DifferentialDriveKinematics m_kinematics = new DifferentialDriveKinematics(0.762);
     private final DifferentialDriveOdometry m_odometry = new DifferentialDriveOdometry(gyro.getRotation2d(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
