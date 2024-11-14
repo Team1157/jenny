@@ -45,6 +45,7 @@ public class Robot extends TimedRobot {
 
     private final SlewRateLimiter m_speedLimiter = new SlewRateLimiter(2);
     private final SlewRateLimiter m_speedLimiter1 = new SlewRateLimiter(2);
+    private final SlewRateLimiter m_speedLimiter2 = new SlewRateLimiter(2);
 
     private final DifferentialDriveKinematics m_kinematics = new DifferentialDriveKinematics(0.762);
     private final DifferentialDriveOdometry m_odometry = new DifferentialDriveOdometry(gyro.getRotation2d(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
@@ -65,7 +66,9 @@ public class Robot extends TimedRobot {
     private NetworkTableEntry ntGyroAngle;
 
     private NetworkTableEntry ntLeftStickAxis;
-    private NetworkTableEntry ntRightStickAxis;
+    private NetworkTableEntry ntRightXStickAxis;
+    private NetworkTableEntry ntRightYStickAxis;
+
     private NetworkTableEntry ntSpeedMultiplier;
     private NetworkTableEntry ntAccelerationSetpoint;
 
@@ -98,12 +101,15 @@ public class Robot extends TimedRobot {
         SmartDashboard.putData("Drive Mode", m_driveModeChooser);
 
         ntLeftStickAxis = telemetryTable.getEntry("LeftStickAxis");
-        ntRightStickAxis = telemetryTable.getEntry("RightStickAxis");
+        ntRightXStickAxis = telemetryTable.getEntry("RightXStickAxis");
+        ntRightYStickAxis = telemetryTable.getEntry("RightYStickAxis");
         ntSpeedMultiplier = telemetryTable.getEntry("SpeedMultiplier");
         ntAccelerationSetpoint = telemetryTable.getEntry("AccelerationSetpoint");
 
         ntLeftStickAxis.setDouble(1); // Default axis for left stick
-        ntRightStickAxis.setDouble(5); // Default axis for right stick
+        ntRightXStickAxis.setDouble(5); // Default axis for right stick
+        ntRightYStickAxis.setDouble(4); // Default axis for right stick
+
         ntSpeedMultiplier.setDouble(1); // Default speed multiplier
         ntAccelerationSetpoint.setDouble(3.0); // Default acceleration setpoint
     }
@@ -124,31 +130,31 @@ public class Robot extends TimedRobot {
     public void teleopPeriodic() {
         // Get selected joystick axes from NetworkTables
         int leftAxis = (int) ntLeftStickAxis.getDouble(1);
-        int rightAxis = (int) ntRightStickAxis.getDouble(5);
+        int rightXAxis = (int) ntRightXStickAxis.getDouble(5);
+        int rightYAxis = (int) ntRightYStickAxis.getDouble(5);
 
         // Get joystick values from selected axes
         double leftY = m_controller.getRawAxis(leftAxis);
-        double rightY = m_controller.getRawAxis(rightAxis);
+        double rightX = m_controller.getRawAxis(rightXAxis);
+        double rightY = -m_controller.getRawAxis(rightYAxis);
 
         // Get speed multiplier and acceleration setpoint from NetworkTables
         double speedMultiplier = ntSpeedMultiplier.getDouble(3.0);
 
         // Apply rate limiters
         double leftSpeed = m_speedLimiter.calculate(-leftY * speedMultiplier);
-        double rightSpeed = m_speedLimiter1.calculate(rightY * speedMultiplier);
-
+        double rightSpeed = m_speedLimiter1.calculate(rightX * speedMultiplier);
+        double rightVertSpeed = m_speedLimiter2.calculate(rightY * speedMultiplier);
         // Set drive mode based on chooser
         String driveMode = m_driveModeChooser.getSelected();
-        if (m_controller.getRawButton(1)) {
-            // Set all motors to zero speed to engage braking
-            m_robotDrive.stopMotor();
-        } else {
+        if (m_controller.getRawButton(8)) {
             if ("differential".equals(driveMode)) {
-                m_robotDrive.tankDrive(leftSpeed, rightSpeed);
+                m_robotDrive.tankDrive(leftSpeed, rightVertSpeed);
             } else if ("arcade".equals(driveMode)) {
                 m_robotDrive.arcadeDrive(leftSpeed, rightSpeed);
-                System.out.println(rightSpeed);
             }
+        } else {
+            m_robotDrive.stopMotor();
         }
         // Telemetry for speed and acceleration
         double currentSpeed = (leftSpeed + rightSpeed) / 2;
