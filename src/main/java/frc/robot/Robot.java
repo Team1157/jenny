@@ -54,7 +54,7 @@ public class Robot extends TimedRobot {
     private final Field2d m_fieldSim = new Field2d();
     private final DifferentialDrivetrainSim m_drivetrainSim = new DifferentialDrivetrainSim(
             LinearSystemId.identifyDrivetrainSystem(1.98, 0.2, 1.5, 0.3),
-            DCMotor.getCIM(2), 8, 0.762, 0.0508, null);
+            DCMotor.getCIM(2), 16, 3.2, .8, null);
 
     private final ADXRS450_GyroSim gyroSim = new ADXRS450_GyroSim(gyro);
     private final EncoderSim m_leftEncoderSim = new EncoderSim(m_leftEncoder);
