@@ -82,8 +82,9 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotInit() {
-        CameraServer.startAutomaticCapture(0);
-        CameraServer.startAutomaticCapture(1);
+        CameraServer.startAutomaticCapture(0).setResolution(1280, 720);
+        CameraServer.startAutomaticCapture(1).setResolution(1280, 720);
+    
 
         NetworkTable telemetryTable = NetworkTableInstance.getDefault().getTable("Telemetry");
         ntSpeed = telemetryTable.getEntry("RobotSpeed");
