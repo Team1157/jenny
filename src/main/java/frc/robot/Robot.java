@@ -132,7 +132,6 @@ public class Robot extends TimedRobot {
 
         // Get speed multiplier and acceleration setpoint from NetworkTables
         double speedMultiplier = ntSpeedMultiplier.getDouble(3.0);
-        double accelerationSetpoint = ntAccelerationSetpoint.getDouble(3.0);
 
         // Apply rate limiters
         double leftSpeed = m_speedLimiter.calculate(-leftY * speedMultiplier);
