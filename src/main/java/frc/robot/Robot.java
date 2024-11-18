@@ -55,7 +55,7 @@ public class Robot extends TimedRobot {
     private final Field2d m_fieldSim = new Field2d();
     private final DifferentialDrivetrainSim m_drivetrainSim = new DifferentialDrivetrainSim(
             LinearSystemId.identifyDrivetrainSystem(1.98, 0.2, 1.5, 0.3),
-            DCMotor.getCIM(2), 16, 3.2, .8, null);
+            DCMotor.getKrakenX60Foc(2), 16, 3.2, .8, null);
 
     private final ADXRS450_GyroSim gyroSim = new ADXRS450_GyroSim(gyro);
     private final EncoderSim m_leftEncoderSim = new EncoderSim(m_leftEncoder);
@@ -125,46 +125,61 @@ public class Robot extends TimedRobot {
     private void updateOdometry() {
         m_odometry.update(gyro.getRotation2d(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
     }
-
+    
     @Override
     public void teleopPeriodic() {
         // Get selected joystick axes from NetworkTables
         int leftAxis = (int) ntLeftStickAxis.getDouble(1);
         int rightXAxis = (int) ntRightXStickAxis.getDouble(5);
         int rightYAxis = (int) ntRightYStickAxis.getDouble(5);
-
+    
         // Get joystick values from selected axes
         double leftY = m_controller.getRawAxis(leftAxis);
         double rightX = m_controller.getRawAxis(rightXAxis);
         double rightY = -m_controller.getRawAxis(rightYAxis);
-
+    
         // Get speed multiplier and acceleration setpoint from NetworkTables
         double speedMultiplier = ntSpeedMultiplier.getDouble(3.0);
-
-        // Apply rate limiters
-        double leftSpeed = m_speedLimiter.calculate(-leftY * speedMultiplier);
-        double rightSpeed = m_speedLimiter1.calculate(rightX * speedMultiplier);
-        double rightVertSpeed = m_speedLimiter2.calculate(rightY * speedMultiplier);
-        // Set drive mode based on chooser
-        String driveMode = m_driveModeChooser.getSelected();
+    
+        // Check if button 8 is pressed
         if (m_controller.getRawButton(8)) {
-            if ("differential".equals(driveMode)) {
-                m_robotDrive.tankDrive(leftSpeed, rightVertSpeed);
-            } else if ("arcade".equals(driveMode)) {
-                m_robotDrive.arcadeDrive(leftSpeed, rightSpeed);
+            // Apply rate limiters
+            double leftVertSpeed = m_speedLimiter.calculate(-leftY * speedMultiplier);
+            double rightHoriSpeed = m_speedLimiter1.calculate(rightX * speedMultiplier);
+            double rightVertSpeed = m_speedLimiter2.calculate(rightY * speedMultiplier);
+    
+            // Set drive mode based on chooser
+            String driveMode = m_driveModeChooser.getSelected();
+            if (m_controller.getRawButton(2)) {
+                gyro.reset();
             }
+            if ("differential".equals(driveMode)) {
+                m_robotDrive.tankDrive(leftVertSpeed, rightVertSpeed);
+            } else if ("arcade".equals(driveMode)) {
+                m_robotDrive.arcadeDrive(leftVertSpeed, rightHoriSpeed);
+            }
+    
+            // Telemetry for speed and acceleration
+            double currentSpeed = (leftVertSpeed + rightHoriSpeed) / 2;
+            double acceleration = (currentSpeed - previousSpeed) / 0.02;
+            previousSpeed = currentSpeed;
+    
+            ntSpeed.setDouble(currentSpeed);
+            ntAcceleration.setDouble(acceleration);
+            ntGyroAngle.setDouble(gyro.getAngle());
         } else {
+            // Reset slew rate limiters and stop the robot
+            m_speedLimiter.reset(0);
+            m_speedLimiter1.reset(0);
+            m_speedLimiter2.reset(0);
             m_robotDrive.stopMotor();
+    
+            // Reset telemetry values
+            ntSpeed.setDouble(0);
+            ntAcceleration.setDouble(0);
         }
-        // Telemetry for speed and acceleration
-        double currentSpeed = (leftSpeed + rightSpeed) / 2;
-        double acceleration = (currentSpeed - previousSpeed) / 0.02;
-        previousSpeed = currentSpeed;
-
-        ntSpeed.setDouble(currentSpeed);
-        ntAcceleration.setDouble(acceleration);
-        ntGyroAngle.setDouble(gyro.getAngle());
     }
+    
 
     @Override
     public void autonomousInit() {
