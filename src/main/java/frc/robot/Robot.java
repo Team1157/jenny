@@ -1,5 +1,7 @@
 package frc.robot;
 
+import java.util.List;
+
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.controller.LTVUnicycleController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -9,29 +11,28 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.simulation.ADXRS450_GyroSim;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
 import edu.wpi.first.wpilibj.simulation.EncoderSim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import java.util.List;
 
 public class Robot extends TimedRobot {
     private final XboxController m_controller = new XboxController(0);
@@ -123,7 +124,17 @@ public class Robot extends TimedRobot {
     }
 
     private void updateOdometry() {
-        m_odometry.update(gyro.getRotation2d(), m_leftEncoder.getDistance(), m_rightEncoder.getDistance());
+        m_drivetrainSim.setInputs(
+            -m_leftDrive.get() * RobotController.getBatteryVoltage(),
+            -m_rightDrive.get() * RobotController.getBatteryVoltage());
+        m_drivetrainSim.update(0.020);
+
+        m_leftEncoderSim.setDistance(m_drivetrainSim.getLeftPositionMeters());
+        m_leftEncoderSim.setRate(m_drivetrainSim.getLeftVelocityMetersPerSecond());
+        m_rightEncoderSim.setDistance(m_drivetrainSim.getRightPositionMeters());
+        m_rightEncoderSim.setRate(m_drivetrainSim.getRightVelocityMetersPerSecond());
+
+        m_odometry.update(gyro.getRotation2d(), m_leftEncoderSim.getDistance(), m_rightEncoderSim.getDistance());
     }
     
     @Override
