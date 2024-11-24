@@ -28,11 +28,11 @@
       "/SmartDashboard/Field": {
         "bottom": 400,
         "builtin": "2021 Bounce Path",
-        "height": 4.572000026702881,
+        "height": 40.571998596191406,
         "left": 20,
         "right": 780,
         "top": 20,
-        "width": 9.144000053405762,
+        "width": 90.14399719238281,
         "window": {
           "name": "Drive SIm",
           "visible": true
