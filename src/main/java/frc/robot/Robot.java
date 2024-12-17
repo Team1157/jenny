@@ -165,7 +165,7 @@ public class Robot extends TimedRobot {
                 gyro.reset();
             }
             if ("differential".equals(driveMode)) {
-                m_robotDrive.tankDrive(leftVertSpeed, rightVertSpeed);
+                m_robotDrive.curvatureDrive(leftVertSpeed, rightVertSpeed, true);
             } else if ("arcade".equals(driveMode)) {
                 m_robotDrive.arcadeDrive(leftVertSpeed, rightHoriSpeed);
             }
