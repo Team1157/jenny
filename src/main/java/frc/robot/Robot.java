@@ -179,7 +179,7 @@ public class Robot extends TimedRobot {
             ntAcceleration.setDouble(acceleration);
             ntGyroAngle.setDouble(gyro.getAngle());
         } else {
-            // Reset slew rate limiters and stop the robot
+            // Reset slew rate limiters and stop the robot (dead mans switch)
             m_speedLimiter.reset(0);
             m_speedLimiter1.reset(0);
             m_speedLimiter2.reset(0);
